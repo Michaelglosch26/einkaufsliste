@@ -352,7 +352,7 @@ const EMO='🍎🍌🍊🍐🍍🍇🍓🍋🥝🍑🍅🥬🥒🥕🥔🧅🧄�
 
 /* ---------- Zustand ---------- */
 const CFG=window.EINKAUF_CONFIG||{};
-const K={state:'ekl.state',dirty:'ekl.dirty',etag:'ekl.etag',tok:'ekl.tok',pkce:'ekl.pkce',last:'ekl.last'};
+const K={state:'ekl.state',dirty:'ekl.dirty',etag:'ekl.ghetag',sha:'ekl.ghsha',tok:'ekl.ghkey',last:'ekl.last'};
 const ls={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},
           set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
 const blank=()=>({v:1,items:{},prefs:{},custom:{},stores:{},order:{}});
@@ -360,7 +360,7 @@ const LOGOS={"Netto": "data:image/webp;base64,UklGRrwlAABXRUJQVlA4ILAlAACQeQCdAS
 const ownLogo=s=>(S.stores&&S.stores[s]&&S.stores[s].img)||'';
 const logo=s=>ownLogo(s)||LOGOS[s]||'';
 let S=Object.assign(blank(),ls.get(K.state,{}));
-let dirty=ls.get(K.dirty,false),etag=ls.get(K.etag,null),tok=ls.get(K.tok,null),lastSync=ls.get(K.last,0);
+let dirty=ls.get(K.dirty,false),etag=ls.get(K.etag,null),sha=ls.get(K.sha,null),tok=ls.get(K.tok,null),lastSync=ls.get(K.last,0);
 let ui={tab:'home',store:'',step:'cat',cat:'',pid:'',qf:'',qa:''},changeSeq=0,syncing=false,again=false,status='local',statusMsg='',timer=0;
 
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -392,93 +392,53 @@ function merge(a,b){
 }
 function canon(o){return JSON.stringify(o,(k,v)=>v&&typeof v==='object'&&!Array.isArray(v)?Object.keys(v).sort().reduce((r,x)=>(r[x]=v[x],r),{}):v)}
 
-/* ---------- Anmeldung (OAuth 2.0 mit PKCE) ---------- */
-const AUTH='https://login.microsoftonline.com/consumers/oauth2/v2.0';
-const GRAPH='https://graph.microsoft.com/v1.0';
-const FILE='/me/drive/special/approot:/einkaufsliste.json';
-const SCOPE='openid profile offline_access Files.ReadWrite.AppFolder';
-const REDIRECT=location.origin+location.pathname.replace(/index\.html$/,'');
-const b64u=buf=>btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
-async function login(silent){
-  const v=b64u(crypto.getRandomValues(new Uint8Array(32)));
-  const ch=b64u(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(v)));
-  const st=b64u(crypto.getRandomValues(new Uint8Array(12)));
-  ls.set(K.pkce,{v,st,silent:!!silent});
-  const p=new URLSearchParams({client_id:CFG.clientId,response_type:'code',redirect_uri:REDIRECT,response_mode:'query',scope:SCOPE,state:st,code_challenge:ch,code_challenge_method:'S256'});
-  p.set('prompt',silent?'none':'select_account');
-  if(silent&&tok&&tok.user)p.set('login_hint',tok.user);
-  location.assign(AUTH+'/authorize?'+p);
+/* ---------- Abgleich über eine private GitHub-Ablage ---------- */
+// Die Daten liegen als eine Datei in einem privaten Repository. Der Zugangsschlüssel wird nur
+// auf dem Gerät gespeichert (nie in config.js, denn die App-Dateien sind öffentlich).
+const GH='https://api.github.com',FILE='einkaufsliste.json';
+const HOME=location.origin+location.pathname.replace(/index\.html$/,'');
+const b64e=t=>{const b=new TextEncoder().encode(t);let o='';for(let i=0;i<b.length;i+=0x8000)o+=String.fromCharCode.apply(null,b.subarray(i,i+0x8000));return btoa(o)};
+const b64d=t=>new TextDecoder().decode(Uint8Array.from(atob(t.replace(/\s/g,'')),c=>c.charCodeAt(0)));
+function takeKeyFromLink(){ // Einrichtungs-Link fürs zweite Handy: …/#k=SCHLÜSSEL
+  const m=location.hash.match(/k=([A-Za-z0-9_]+)/);if(!m)return;
+  tok=m[1];ls.set(K.tok,tok);etag=sha=null;ls.del(K.etag);ls.del(K.sha);
+  try{history.replaceState(null,'',location.pathname+location.search)}catch(e){location.hash=''}
 }
-async function tokenReq(params){
-  const r=await fetch(AUTH+'/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({client_id:CFG.clientId,scope:SCOPE,...params})});
-  const j=await r.json();
-  if(!r.ok)throw Object.assign(new Error(j.error_description||j.error||'Anmeldung fehlgeschlagen'),{code:j.error});
-  let user=tok&&tok.user;
-  try{const c=JSON.parse(decodeURIComponent(escape(atob(j.id_token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')))));user=c.preferred_username||c.email||user}catch(e){}
-  tok={access:j.access_token,exp:Date.now()+(j.expires_in-90)*1000,refresh:j.refresh_token||(tok&&tok.refresh),user};
-  ls.set(K.tok,tok);
-}
-async function handleRedirect(){
-  const q=new URLSearchParams(location.search);
-  if(!q.has('code')&&!q.has('error'))return;
-  const pk=ls.get(K.pkce,null);ls.del(K.pkce);
-  history.replaceState(null,'',REDIRECT);
-  if(q.has('error')){
-    if(pk&&pk.silent){expire()}else{statusMsg=q.get('error_description')||q.get('error')}
-    return;
-  }
-  if(!pk||pk.st!==q.get('state')){statusMsg='Anmeldung konnte nicht zugeordnet werden. Bitte erneut versuchen.';return}
-  try{await tokenReq({grant_type:'authorization_code',code:q.get('code'),redirect_uri:REDIRECT,code_verifier:pk.v});sessionStorage.removeItem('ekl.silent')}
-  catch(e){statusMsg=e.message}
-}
-function expire(){tok=tok&&tok.user?{user:tok.user}:null;tok?ls.set(K.tok,tok):ls.del(K.tok)}
-function logout(){tok=null;etag=null;ls.del(K.tok);ls.del(K.etag);setStatus('login');closeSheet()}
-let refreshing=null;
-async function getToken(){
-  if(!tok||!tok.refresh)return null;
-  if(tok.access&&Date.now()<tok.exp)return tok.access;
-  refreshing=refreshing||tokenReq({grant_type:'refresh_token',refresh_token:tok.refresh}).finally(()=>refreshing=null);
-  try{await refreshing;return tok.access}
-  catch(e){
-    if(e.code==='invalid_grant'||e.code==='interaction_required'){
-      // Microsoft gibt Web-Apps nur 24 Stunden gültige Sitzungen; einmal still erneuern, sonst Anmeldeknopf zeigen.
-      if(!sessionStorage.getItem('ekl.silent')&&navigator.onLine){sessionStorage.setItem('ekl.silent','1');await login(true);return null}
-      expire();return null;
-    }
-    throw e;
-  }
-}
-
-/* ---------- OneDrive-Synchronisierung ---------- */
+function connect(key){tok=key.trim();if(!tok)return;ls.set(K.tok,tok);etag=sha=null;ls.del(K.etag);ls.del(K.sha);statusMsg='';closeSheet();sync()}
+function logout(){tok=null;etag=sha=null;ls.del(K.tok);ls.del(K.etag);ls.del(K.sha);setStatus('login');closeSheet()}
 async function sync(){
-  if(!CFG.clientId){setStatus('local');return}
-  if(!tok||!tok.refresh){setStatus('login');return}
+  if(!CFG.repo){setStatus('local');return}
+  if(!tok){setStatus('login');return}
   if(syncing){again=true;return}
   syncing=true;setStatus('sync');
   try{
-    const t=await getToken();
-    if(!t){setStatus('login');return}
-    const seq=changeSeq,auth={Authorization:'Bearer '+t};
-    let meta=null;
-    const mr=await fetch(GRAPH+FILE+'?select=id,eTag,@microsoft.graph.downloadUrl',{headers:auth,cache:'no-store'});
-    if(mr.status===401){tok.exp=0;again=true;return}
-    if(mr.ok)meta=await mr.json();else if(mr.status!==404)throw new Error('OneDrive antwortet mit Fehler '+mr.status);
-    let needPut=!meta||dirty;
-    if(meta&&meta.eTag!==etag){
-      const dr=await fetch(meta['@microsoft.graph.downloadUrl'],{cache:'no-store'});
-      if(!dr.ok)throw new Error('Liste konnte nicht geladen werden ('+dr.status+')');
-      let remote;try{remote=JSON.parse(await dr.text())}catch(e){remote=blank()}
-      const merged=merge(S,remote);
-      if(canon(merged)!==canon(S)){S=merged;ls.set(K.state,S);render()}
-      needPut=canon(merged)!==canon(remote);
-      if(!needPut){etag=meta.eTag;ls.set(K.etag,etag)}
-    }
+    const seq=changeSeq,url=`${GH}/repos/${CFG.repo}/contents/${FILE}`;
+    const h={Authorization:'Bearer '+tok,Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'};
+    const gh={...h};if(etag&&sha)gh['If-None-Match']=etag; // unverändert -> 304, spart Daten
+    const r=await fetch(url,{headers:gh,cache:'no-store'});
+    if(r.status===401)throw new Error('Der Zugangsschlüssel ist ungültig oder abgelaufen. Bitte einen neuen eintragen.');
+    if(r.status===403)throw new Error('GitHub verweigert den Zugriff (Schlüssel ohne Berechtigung oder zu viele Anfragen).');
+    let cur=sha,needPut=dirty;
+    if(r.status===404){cur=null;needPut=true}
+    else if(r.status===200){
+      const j=await r.json();cur=j.sha;
+      if(j.sha!==sha){ // jemand anderes hat gespeichert: laden und zusammenführen
+        const txt=j.content?b64d(j.content):await (await fetch(url,{headers:{...h,Accept:'application/vnd.github.raw+json'},cache:'no-store'})).text();
+        let remote;try{remote=JSON.parse(txt)}catch(e){remote=blank()}
+        const merged=merge(S,remote);
+        if(canon(merged)!==canon(S)){S=merged;ls.set(K.state,S);render()}
+        needPut=canon(merged)!==canon(remote);
+      }
+      sha=cur;etag=r.headers.get('ETag');ls.set(K.sha,sha);ls.set(K.etag,etag);
+    }else if(r.status!==304)throw new Error('GitHub antwortet mit Fehler '+r.status);
     if(needPut){
-      const h={...auth,'Content-Type':'text/plain'};if(meta)h['If-Match']=meta.eTag;
-      const pr=await fetch(GRAPH+FILE+':/content',{method:'PUT',headers:h,body:JSON.stringify(S)});
-      if(pr.status===412||pr.status===409){again=true;return}
-      if(!pr.ok)throw new Error('Speichern in OneDrive fehlgeschlagen ('+pr.status+')');
-      etag=(await pr.json()).eTag;ls.set(K.etag,etag);
+      const body={message:'Einkaufsliste aktualisiert',content:b64e(JSON.stringify(S))};if(cur)body.sha=cur;
+      const p=await fetch(url,{method:'PUT',headers:{...h,'Content-Type':'application/json'},body:JSON.stringify(body)});
+      if(p.status===409||p.status===422){etag=null;again=true;return} // inzwischen geändert: neu laden
+      if(p.status===404)throw new Error('Die Ablage „'+CFG.repo+'“ wurde nicht gefunden oder der Schlüssel hat keinen Zugriff darauf.');
+      if(p.status===401)throw new Error('Der Zugangsschlüssel ist ungültig oder abgelaufen. Bitte einen neuen eintragen.');
+      if(!p.ok)throw new Error('Speichern fehlgeschlagen ('+p.status+')');
+      sha=(await p.json()).content.sha;etag=null;ls.set(K.sha,sha);ls.del(K.etag);
     }
     if(changeSeq===seq){dirty=false;ls.set(K.dirty,false)}else again=true;
     lastSync=Date.now();ls.set(K.last,lastSync);setStatus('ok');
@@ -487,7 +447,7 @@ async function sync(){
 }
 function setStatus(s,msg){
   status=s;if(msg!==undefined)statusMsg=msg;else if(s==='ok')statusMsg='';
-  const txt={local:'Nur lokal',login:'Anmelden',sync:'Gleicht ab …',ok:'Synchron',offline:'Offline',error:'Sync-Fehler'}[s];
+  const txt={local:'Nur lokal',login:'Einrichten',sync:'Gleicht ab …',ok:'Synchron',offline:'Offline',error:'Sync-Fehler'}[s];
   $('status').className='status st-'+s;$('statusText').textContent=txt;renderBanner();
 }
 
@@ -499,8 +459,9 @@ function qshow(q){const p=qparse(q);return p.u?p.n+' '+p.u:String(p.n)}
 function qstep(id,dir){const i=S.items[id];if(!i)return;const p=qparse(i.qty),n=Math.max(p.step,Math.round((p.n+dir*p.step)*100)/100);const PL={Kiste:'Kisten',Dose:'Dosen',Tüte:'Tüten',Glas:'Gläser'},SG=Object.fromEntries(Object.entries(PL).map(e=>[e[1],e[0]])),u=n>1?(PL[p.u]||p.u):(SG[p.u]||p.u);i.qty=u?n+' '+u:(n===1?'':String(n));i.ts=Date.now();touch()}
 function renderBanner(){
   let h='';
-  if(!CFG.clientId)h=`<div class="banner"><span>OneDrive ist noch nicht eingerichtet. Die Liste wird nur auf diesem Gerät gespeichert.</span></div>`;
-  else if(status==='login')h=`<div class="banner"><span>Melde dich an, damit ihr beide dieselbe Liste seht.</span><button class="btn" data-act="login">Anmelden</button></div>`;
+  if(!CFG.repo)h=`<div class="banner"><span>Der Abgleich ist noch nicht eingerichtet. Die Liste wird nur auf diesem Gerät gespeichert.</span></div>`;
+  else if(status==='login')h=`<div class="banner"><span>Trage den Zugangsschlüssel ein, damit ihr beide dieselbe Liste seht.</span><button class="btn" data-act="settings">Einrichten</button></div>`;
+  else if(status==='error'&&statusMsg)h=`<div class="banner"><span>${esc(statusMsg)}</span><button class="btn" data-act="settings">Öffnen</button></div>`;
   $('banner').innerHTML=h;
 }
 function render(){
@@ -574,7 +535,7 @@ function renderHome(act,open){
   const hr=new Date().getHours(),hi=hr<11?'Guten Morgen':hr<18?'Hallo':'Guten Abend';
   $('homeBody').innerHTML=`<p class="hello">${hi}! Was möchtest du tun?</p><button class="hcard main" data-act="hnew"><span class="pic">📝</span><span><b>Neue Einkaufsliste erstellen</b><small>Mit leerer Liste beginnen</small></span></button>
   <button class="hcard" data-act="tab" data-tab="list" ${n?'':'disabled'}><span class="pic">🧾</span><span><b>Einkaufsliste fortsetzen</b><small>${info}</small></span></button>
-  <button class="hcard" data-act="tab" data-tab="admin"><span class="pic">🗂️</span><span><b>Produktkatalog erweitern</b><small>${catalog().length} Produkte anlegen, ändern, bebildern</small></span></button><p class="ver">Version 26</p>`;
+  <button class="hcard" data-act="tab" data-tab="admin"><span class="pic">🗂️</span><span><b>Produktkatalog erweitern</b><small>${catalog().length} Produkte anlegen, ändern, bebildern</small></span></button><p class="ver">Version 27</p>`;
 }
 function renderAdmin(){
   const q=norm((ui.qa||'').trim()),all=catalog().filter(p=>!q||norm(p.name).includes(q));let h='<button class="btn wide" data-act="padd" style="margin:6px 0 4px">＋ Neues Produkt</button>';
@@ -641,16 +602,16 @@ const enter=()=>{const m=document.querySelector('main');m.classList.remove('ente
 function go(step){ui.step=step;try{history.pushState({},'')}catch(e){}render();enter();document.querySelector('main').scrollTop=0}
 function goBack(){if(ui.tab!=='prod'||ui.step==='cat')return;ui.step=ui.step==='store'?'prod':'cat';render();enter()}
 function settingsSheet(){
-  let h='<h3>Synchronisierung</h3>';
-  if(!CFG.clientId)h+='<p>OneDrive ist noch nicht eingerichtet. Trage die Anwendungs-ID in der Datei config.js ein (siehe Anleitung). Bis dahin bleibt die Liste nur auf diesem Gerät.</p>';
-  else if(tok&&tok.refresh){
-    h+=`<p>Angemeldet${tok.user?' als '+esc(tok.user):''}.<br>Letzter Abgleich: ${lastSync?new Date(lastSync).toLocaleString('de-DE'):'noch nie'}</p>`;
+  let h='<h3>Abgleich</h3>';
+  if(!CFG.repo)h+='<p>Der Abgleich ist noch nicht eingerichtet. Trage die Ablage in der Datei config.js ein (siehe Anleitung). Bis dahin bleibt die Liste nur auf diesem Gerät.</p>';
+  else if(tok){
+    h+=`<p>Verbunden mit der Ablage „${esc(CFG.repo)}“.<br>Letzter Abgleich: ${lastSync?new Date(lastSync).toLocaleString('de-DE'):'noch nie'}</p>`;
     if(statusMsg)h+=`<p style="color:var(--warn)">${esc(statusMsg)}</p>`;
-    h+='<button class="btn wide" data-act="syncnow">Jetzt abgleichen</button><button class="btn danger wide" data-act="logout">Abmelden</button>';
+    h+='<button class="btn wide" data-act="syncnow">Jetzt abgleichen</button><button class="btn ghost wide" data-act="sharekey">Einrichtungs-Link für das zweite Handy</button><button class="btn danger wide" data-act="logout">Verbindung trennen</button>';
   }else{
-    h+='<p>Meldet euch beide mit demselben Microsoft-Konto an. Die Liste liegt dann in OneDrive unter „Apps“.</p>';
+    h+='<p>Füge hier den Zugangsschlüssel aus GitHub ein. Er wird nur auf diesem Gerät gespeichert. Auf beiden Handys denselben Schlüssel verwenden.</p>';
     if(statusMsg)h+=`<p style="color:var(--warn)">${esc(statusMsg)}</p>`;
-    h+='<button class="btn wide" data-act="login">Mit Microsoft anmelden</button>';
+    h+='<div class="field"><label for="fKey">Zugangsschlüssel</label><input id="fKey" type="password" placeholder="github_pat_…" autocomplete="off" autocapitalize="off" spellcheck="false"></div><button class="btn wide" data-act="connect">Verbinden</button>';
   }
   openSheet(h+'<button class="btn ghost wide" data-act="close">Schließen</button>');
 }
@@ -823,7 +784,12 @@ const A={
   remove(){const i=S.items[sheetCtx.id];i.del=true;i.ts=Date.now();closeSheet();touch()},
   close(){closeSheet()},
   settings(){settingsSheet()},
-  login(){login(false)},
+  connect(){connect($('fKey').value)},
+  async sharekey(){
+    const link=HOME+'#k='+tok;
+    try{if(navigator.share){await navigator.share({title:'Einkaufsliste einrichten',url:link});return}}catch(e){return}
+    try{await navigator.clipboard.writeText(link);toast('Link kopiert – nur an deine Frau schicken')}catch(e){openSheet(`<h3>Einrichtungs-Link</h3><p>Diesen Link auf dem zweiten Handy öffnen. Er enthält den Zugangsschlüssel, also nicht weitergeben.</p><div class="field"><input readonly value="${esc(link)}" onfocus="this.select()"></div><button class="btn ghost wide" data-act="close">Schließen</button>`)}
+  },
   logout(){logout()},
   syncnow(){closeSheet();sync()}
 };
@@ -840,7 +806,7 @@ $('fImg').addEventListener('change',e=>{
       c.getContext('2d').drawImage(im,0,0,c.width,c.height);const x=sheetCtx.shop;S.stores[x]={img:c.toDataURL('image/png'),ts:Date.now()};
       URL.revokeObjectURL(im.src);touch();storeSheet(x);return;
     }
-    // Foto quadratisch zuschneiden und klein rechnen, damit die Liste in OneDrive schlank bleibt
+    // Foto quadratisch zuschneiden und klein rechnen, damit die gespeicherte Datei schlank bleibt
     const c=document.createElement('canvas'),z=160,m=Math.min(im.width,im.height);c.width=c.height=z;
     c.getContext('2d').drawImage(im,(im.width-m)/2,(im.height-m)/2,m,m,0,0,z,z);
     keep();sheetCtx.img=c.toDataURL('image/jpeg',.75);URL.revokeObjectURL(im.src);drawProd();
@@ -856,8 +822,8 @@ setInterval(()=>{if(!document.hidden&&navigator.onLine&&$('sheet').hidden)sync()
 
 (async()=>{
   render();
-  if(CFG.clientId)await handleRedirect();
-  setStatus(!CFG.clientId?'local':(tok&&tok.refresh?'ok':'login'));
+  if(CFG.repo)takeKeyFromLink();
+  setStatus(!CFG.repo?'local':(tok?'ok':'login'));
   sync();
   if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
 })();
