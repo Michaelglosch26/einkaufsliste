@@ -1,6 +1,6 @@
 {
-  "name": "Einkaufsliste",
-  "short_name": "Einkauf",
+  "name": "Zettelfrei – Einkaufsliste",
+  "short_name": "Zettelfrei",
   "lang": "de",
   "start_url": "./",
   "scope": "./",

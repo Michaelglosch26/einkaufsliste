@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Einkaufsliste</title>
+<title>Zettelfrei</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <meta name="theme-color" content="#0a0e0c">
@@ -275,6 +275,17 @@ nav{background:rgba(21,27,23,.82);backdrop-filter:blur(16px);-webkit-backdrop-fi
 .walk li{align-items:center;padding-right:10px;gap:6px}
 .walk .rowmain{min-height:46px;padding:8px 4px 8px 14px}
 .walk .qb{width:34px;height:34px;flex:none}
+#zoom{position:fixed;inset:0;z-index:30;background:rgba(0,0,0,.9);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+#zoom[hidden]{display:none}
+.zpic{font-size:min(54vw,250px);line-height:1.1;animation:enter .2s}
+.zpic img{width:min(88vw,460px);height:min(88vw,460px);border-radius:28px;object-fit:cover;display:block}
+.zpic svg{width:min(66vw,300px);height:auto;display:block}
+#zoom p{font-size:24px;font-weight:800;margin:0;text-align:center;letter-spacing:-.02em}
+#zoom small{color:var(--muted)}
+[data-zoom]{cursor:zoom-in}
+.imgbtns{display:flex;flex-direction:column;gap:8px;flex:1}
+.imgbtns .btn{padding:12px 14px;text-align:left}
+.imgbtns .linkbtn{text-align:left;padding:4px 6px}
 .ver{text-align:center;color:var(--muted);font-size:12px;margin:10px 0 0;opacity:.7}
 #toast{background:#eef3ef;color:#0a0e0c}
 .banner{background:var(--accent-soft)}
@@ -283,7 +294,7 @@ nav{background:rgba(21,27,23,.82);backdrop-filter:blur(16px);-webkit-backdrop-fi
 <body>
 <header>
   <button class="back" id="back" data-act="back" aria-label="Zurück" hidden>‹</button>
-  <h1 id="title">Einkaufsliste</h1>
+  <h1 id="title">Zettelfrei</h1>
   <button class="status" id="status" data-act="settings"><i class="dot"></i><span id="statusText">Nur lokal</span></button>
 </header>
 <main>
@@ -307,6 +318,8 @@ nav{background:rgba(21,27,23,.82);backdrop-filter:blur(16px);-webkit-backdrop-fi
 </nav>
 <div id="toast"></div>
 <input type="file" id="fImg" accept="image/*" hidden>
+<input type="file" id="fCam" accept="image/*" capture="environment" hidden>
+<div id="zoom" hidden></div>
 <div id="sheet" hidden><div class="panel" id="panel"></div></div>
 
 <script src="config.js"></script>
@@ -470,7 +483,7 @@ function render(){
   const act=Object.values(S.items).filter(i=>!i.del),open=act.filter(i=>!i.done);
   const prod=ui.tab==='prod',p=prod&&ui.step==='store'?catalog().find(x=>x.id===ui.pid):null;
   $('back').hidden=!(prod&&ui.step!=='cat');$('qfWrap').hidden=ui.step!=='cat';
-  $('title').textContent=ui.tab==='home'?'Einkauf':ui.tab==='admin'?'Produkte verwalten':!prod?'Einkaufsliste':ui.step==='cat'?'Kategorie wählen':ui.step==='prod'?CAT[ui.cat].name:(p?p.name:'');
+  $('title').textContent=ui.tab==='home'?'Zettelfrei':ui.tab==='admin'?'Produkte verwalten':!prod?'Einkaufsliste':ui.step==='cat'?'Kategorie wählen':ui.step==='prod'?CAT[ui.cat].name:(p?p.name:'');
   if(ui.tab==='home')renderHome(act,open);else if(ui.tab==='admin')renderAdmin();else if(!prod)renderList(act,open);else renderFlow(p);
 }
 function renderList(act,open){
@@ -488,7 +501,7 @@ function renderList(act,open){
   if(!act.length){$('listBody').innerHTML=`<div class="empty"><p>Die Liste ist leer.</p><button class="btn" data-act="tab" data-tab="prod">Produkte auswählen</button> <button class="btn ghost" data-act="voice">🎤 Einsprechen</button></div>`;return}
   const row=i=>{const q=qparse(i.qty);
     const qty=i.done?`<span class="qv">${esc(qshow(i.qty))}</span>`:`<span class="qgrp"><button class="qb" data-act="qplus" data-id="${esc(i.id)}" aria-label="Menge erhöhen">+</button><span class="qv">${esc(qshow(i.qty))}</span><button class="qb" data-act="qminus" data-id="${esc(i.id)}" aria-label="Menge verringern" ${q.n<=q.step?'disabled':''}>−</button></span>`;
-    return `<li class="${i.done?'done':''}"><button class="rowmain" data-act="toggle" data-id="${esc(i.id)}"><span class="chk">✓</span><span class="em">${pic(i.id,i.cat)}</span><span class="nm">${esc(i.name)}${i.note?`<small>${esc(i.note)}</small>`:''}</span></button>${qty}${badge(i.store)}<button class="more" data-act="edit" data-id="${esc(i.id)}" aria-label="${esc(i.name)} bearbeiten">⋯</button><button class="trash" data-act="trash" data-id="${esc(i.id)}" aria-label="${esc(i.name)} entfernen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg></button></li>`};
+    return `<li class="${i.done?'done':''}"><button class="rowmain" data-act="toggle" data-id="${esc(i.id)}"><span class="chk">✓</span><span class="em" data-zoom="${esc(i.id)}">${pic(i.id,i.cat)}</span><span class="nm">${esc(i.name)}${i.note?`<small>${esc(i.note)}</small>`:''}</span></button>${qty}${badge(i.store)}<button class="more" data-act="edit" data-id="${esc(i.id)}" aria-label="${esc(i.name)} bearbeiten">⋯</button><button class="trash" data-act="trash" data-id="${esc(i.id)}" aria-label="${esc(i.name)} entfernen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg></button></li>`};
   const byName=(a,b)=>a.name.localeCompare(b.name,'de');
   let h='';const vis=open.filter(fits);
   const ws=ui.store||(used.length===1?used[0]:'');
@@ -523,7 +536,7 @@ function renderFlow(p){
       +'<button class="tile dashed" data-act="new"><span class="pic">＋</span>Neues Produkt</button></div>';
   }else if(p){
     const on=onList(p.id),cur=on?S.items[p.id].store:p.store;
-    h=`<div class="hero"><span class="pic">${pic(p.id,p.cat)}</span><p>In welchem Laden?</p></div><div class="grid">`
+    h=`<div class="hero"><span class="pic" data-zoom="${esc(p.id)}">${pic(p.id,p.cat)}</span><p>In welchem Laden?</p></div><div class="grid">`
       +[''].concat(STORES).map(s=>`<button class="tile shop ${s?(logo(s)?'haslogo':'s-'+s):''} ${(on||s)&&cur===s?'sel':''}" data-act="storepick" data-s="${s}" aria-label="${s||'Egal'}">${!s?'Egal':logo(s)?`<img class="slogo" src="${logo(s)}" alt="">`:s}${s&&p.store===s?'<small style="color:inherit">Standard</small>':''}</button>`).join('')+'</div>';
     if(on)h+='<button class="btn danger wide" data-act="unpick">Von der Liste entfernen</button>';
   }
@@ -533,9 +546,9 @@ function renderFlow(p){
 function renderHome(act,open){
   const n=act.length,info=n?`${open.length} offen${n-open.length?', '+(n-open.length)+' erledigt':''}`:'Keine aktuelle Liste vorhanden';
   const hr=new Date().getHours(),hi=hr<11?'Guten Morgen':hr<18?'Hallo':'Guten Abend';
-  $('homeBody').innerHTML=`<p class="hello">${hi}! Was möchtest du tun?</p><button class="hcard main" data-act="hnew"><span class="pic">📝</span><span><b>Neue Einkaufsliste erstellen</b><small>Mit leerer Liste beginnen</small></span></button>
+  $('homeBody').innerHTML=`<p class="hello">${hi}! Euer Einkauf, ganz ohne Zettel.</p><button class="hcard main" data-act="hnew"><span class="pic">📝</span><span><b>Neue Einkaufsliste erstellen</b><small>Mit leerer Liste beginnen</small></span></button>
   <button class="hcard" data-act="tab" data-tab="list" ${n?'':'disabled'}><span class="pic">🧾</span><span><b>Einkaufsliste fortsetzen</b><small>${info}</small></span></button>
-  <button class="hcard" data-act="tab" data-tab="admin"><span class="pic">🗂️</span><span><b>Produktkatalog erweitern</b><small>${catalog().length} Produkte anlegen, ändern, bebildern</small></span></button><p class="ver">Version 27</p>`;
+  <button class="hcard" data-act="tab" data-tab="admin"><span class="pic">🗂️</span><span><b>Produktkatalog erweitern</b><small>${catalog().length} Produkte anlegen, ändern, bebildern</small></span></button><p class="ver">Version 28</p>`;
 }
 function renderAdmin(){
   const q=norm((ui.qa||'').trim()),all=catalog().filter(p=>!q||norm(p.name).includes(q));let h='<button class="btn wide" data-act="padd" style="margin:6px 0 4px">＋ Neues Produkt</button>';
@@ -591,7 +604,7 @@ function drawProd(){
   <div class="field"><label>Kategorie</label><div class="wrap">${CATS.map(k=>`<button class="chip ${x.cat===k[0]?'on':''}" data-act="pcat" data-c="${k[0]}">${k[2]} ${esc(k[1])}</button>`).join('')}</div></div>
   <div class="field"><label>Standard-Laden</label>${storeChips(x.store,'pstore')}</div>
   <div class="field"><label>Bild</label>
-    <div class="imgrow"><span class="pic">${x.img?pimg(x.img):pic(x.pid||'',x.cat)}</span><div><button class="btn ghost" data-act="pphoto">Eigenes Foto wählen</button>${x.img?' <button class="linkbtn" data-act="pnoimg">Zurücksetzen</button>':''}</div></div>
+    <div class="imgrow"><span class="pic" data-zoom="@sheet">${x.img?pimg(x.img):pic(x.pid||'',x.cat)}</span><div class="imgbtns"><button class="btn ghost" data-act="pcam">📷 Foto aufnehmen</button><button class="btn ghost" data-act="pphoto">🖼️ Aus Galerie wählen</button>${x.img?'<button class="linkbtn" data-act="pnoimg">Zurücksetzen</button>':''}</div></div>
     <div class="emo">${EMO.map(e=>`<button data-act="pemoji" data-e="${e}" class="${x.img===e?'on':''}">${e}</button>`).join('')}</div></div>
   <button class="btn wide" data-act="psave">Speichern</button>
   ${x.pid?'<button class="btn danger wide" data-act="pdel">Produkt löschen</button>':''}
@@ -756,6 +769,7 @@ const A={
   pemoji(d){keep();sheetCtx.img=d.e;drawProd()},
   pnoimg(){keep();sheetCtx.img='';drawProd()},
   pphoto(){$('fImg').click()},
+  pcam(){$('fCam').click()},
   psave(){
     keep();const x=sheetCtx,n=x.name.trim(),t0=Date.now();if(!n){$('fName').focus();return}
     let id=x.pid;
@@ -793,11 +807,19 @@ const A={
   logout(){logout()},
   syncnow(){closeSheet();sync()}
 };
+function zoom(id){ // Bild groß anzeigen
+  let html,name;
+  if(id==='@sheet'){const x=sheetCtx;if(!x)return;html=x.img?pimg(x.img):pic(x.pid||'',x.cat);name=($('fName')&&$('fName').value)||x.name||''}
+  else{const i=(S.items[id]&&!S.items[id].del&&S.items[id])||catalog().find(p=>p.id===id);if(!i)return;html=pic(id,i.cat);name=i.name}
+  $('zoom').innerHTML=`<div class="zpic">${html}</div><p>${esc(name)}</p><small>Tippen zum Schließen</small>`;$('zoom').hidden=false;
+}
 document.addEventListener('click',e=>{
+  if(!$('zoom').hidden){$('zoom').hidden=true;return}
+  const z=e.target.closest('[data-zoom]');if(z){zoom(z.dataset.zoom);return}
   if(e.target===$('sheet')){commitFields();closeSheet();return}
   const b=e.target.closest('[data-act]');if(b&&A[b.dataset.act])A[b.dataset.act](b.dataset);
 });
-$('fImg').addEventListener('change',e=>{
+const onPick=e=>{
   const f=e.target.files[0];e.target.value='';if(!f||!sheetCtx)return;
   const im=new Image();
   im.onload=()=>{
@@ -807,12 +829,13 @@ $('fImg').addEventListener('change',e=>{
       URL.revokeObjectURL(im.src);touch();storeSheet(x);return;
     }
     // Foto quadratisch zuschneiden und klein rechnen, damit die gespeicherte Datei schlank bleibt
-    const c=document.createElement('canvas'),z=160,m=Math.min(im.width,im.height);c.width=c.height=z;
+    const c=document.createElement('canvas'),z=360,m=Math.min(im.width,im.height);c.width=c.height=z;
     c.getContext('2d').drawImage(im,(im.width-m)/2,(im.height-m)/2,m,m,0,0,z,z);
-    keep();sheetCtx.img=c.toDataURL('image/jpeg',.75);URL.revokeObjectURL(im.src);drawProd();
+    keep();sheetCtx.img=c.toDataURL('image/jpeg',.78);URL.revokeObjectURL(im.src);drawProd();
   };
   im.src=URL.createObjectURL(f);
-});
+};
+$('fImg').addEventListener('change',onPick);$('fCam').addEventListener('change',onPick);
 $('qf').addEventListener('input',e=>{ui.qf=e.target.value;renderFlow(null)});
 $('qa').addEventListener('input',e=>{ui.qa=e.target.value;renderAdmin()});
 addEventListener('popstate',()=>{if(!$('sheet').hidden){closeSheet();return}goBack()});
