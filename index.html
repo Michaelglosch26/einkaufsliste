@@ -622,7 +622,7 @@ function renderHome(act,open){
   const n=act.length;
   h+=`<h2>🛒 Einkauf</h2><div class="hgrid"><button class="hcard main" data-act="hnew"><span class="pic">📝</span><span><b>Neue Liste</b></span></button><button class="hcard" data-act="tab" data-tab="list" ${n?'':'disabled'}><span class="pic">🧾</span><span><b>Liste</b><small>${n?open.length+' offen':'leer'}</small></span></button></div>
   <button class="hcard slim" data-act="tab" data-tab="admin"><span class="pic">🗂️</span><span><b>Produktkatalog</b><small>${catalog().length} Produkte</small></span></button>`;
-  $('homeBody').innerHTML=h+'<p class="ver">Version 37</p>';
+  $('homeBody').innerHTML=h+'<p class="ver">Version 38</p>';
 }
 function renderAdmin(){
   const q=norm((ui.qa||'').trim()),all=catalog().filter(p=>!q||norm(p.name).includes(q));let h='<button class="btn wide" data-act="padd" style="margin:6px 0 4px">＋ Neues Produkt</button>';
