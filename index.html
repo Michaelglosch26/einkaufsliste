@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Zettelfrei</title>
+<title>Zentrale des Wahnsinns</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <meta name="theme-color" content="#0a0e0c">
@@ -225,7 +225,7 @@ nav{background:rgba(21,27,23,.82);backdrop-filter:blur(16px);-webkit-backdrop-fi
 .search[hidden]{display:none}
 .search input{box-shadow:var(--shadow);border:0;padding-left:18px}
 .simlist{margin:10px 0 14px}
-.addrow{display:flex;gap:12px;margin-top:18px}
+.addrow{display:flex;gap:12px;margin:2px 0 6px}
 .addrow .addbig{flex:1;margin:0}
 .micbtn{flex:none;width:68px;padding:0;display:grid;place-items:center;border-radius:20px}
 .micbtn svg,.vmic svg{width:28px;height:28px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
@@ -307,6 +307,34 @@ nav{background:rgba(21,27,23,.82);backdrop-filter:blur(16px);-webkit-backdrop-fi
 .zdoc{width:100%;max-width:900px;border-radius:14px;display:block}
 nav button{font-size:11px}
 nav svg{width:22px;height:22px}
+.dot2{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.who{display:inline-block;font-size:12px;font-weight:700;padding:2px 8px;border-radius:99px;color:var(--c);background:color-mix(in srgb,var(--c) 18%,transparent);text-decoration:none}
+.due{font-size:12px;font-weight:600;color:var(--muted)}
+.todo li{align-items:stretch}
+.todo .rowmain:first-child{flex:none;padding-right:2px}
+.todo .tmain{padding-left:6px}
+.todo li.late .due{color:var(--danger)}
+.todo li.late{box-shadow:inset 3px 0 0 var(--danger)}
+.prow{display:flex;align-items:center;gap:8px}
+.prow input{flex:1}
+input[type=date]{color-scheme:dark}
+nav button[hidden]{display:none}
+header h1.long{font-size:23px}
+#homeBody .em{width:auto;min-width:30px}
+#homeBody .etime{min-width:0}
+.hgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.hgrid .hcard{min-height:96px;padding:16px;gap:12px}
+.hgrid .hcard.main{min-height:96px}
+.hgrid .hcard b{font-size:17px}
+.hcard.slim{min-height:72px;margin-top:12px;padding:14px 18px}
+.hcard.slim .pic{width:44px;height:44px;font-size:22px;border-radius:14px}
+#homeBody h2{margin-top:20px}
+.etime{flex:none;min-width:46px;font-weight:800;color:var(--accent);font-size:15px;text-align:center}
+#calBody h2.hot{color:var(--accent)}
+.prow2{display:grid;grid-template-columns:1.4fr 1fr;gap:10px}
+.prow2 label{display:block;font-size:13px;color:var(--muted);margin:0 4px 6px;font-weight:600}
+input[type=time]{color-scheme:dark}
+.field input[type=date],.field input[type=time]{width:100%;padding:13px 14px;border-radius:16px;border:0;background:var(--surface);box-shadow:var(--shadow);color:inherit;font:inherit}
 .ver{text-align:center;color:var(--muted);font-size:12px;margin:10px 0 0;opacity:.7}
 #toast{background:#eef3ef;color:#0a0e0c}
 .banner{background:var(--accent-soft)}
@@ -315,7 +343,7 @@ nav svg{width:22px;height:22px}
 <body>
 <header>
   <button class="back" id="back" data-act="back" aria-label="Zurück" hidden>‹</button>
-  <h1 id="title">Zettelfrei</h1>
+  <h1 id="title">Zentrale des Wahnsinns</h1>
   <button class="status" id="status" data-act="settings"><i class="dot"></i><span id="statusText">Nur lokal</span></button>
 </header>
 <main>
@@ -329,15 +357,19 @@ nav svg{width:22px;height:22px}
     <div class="search" id="qfWrap"><input id="qf" type="search" placeholder="Produkt suchen …" autocomplete="off" enterkeyhint="search"></div>
     <div id="flow"></div>
   </section>
+  <section class="view" id="vCal" hidden><div id="calBody"></div></section>
+  <section class="view" id="vTodo" hidden><div id="todoBody"></div></section>
   <section class="view" id="vFood" hidden><div id="foodBody"></div></section>
   <section class="view" id="vAdmin" hidden><div class="search"><input id="qa" type="search" placeholder="Produkt suchen …" autocomplete="off" enterkeyhint="search"></div><div id="adminBody"></div></section>
 </main>
 <nav>
   <button id="tabHome" class="on" data-act="tab" data-tab="home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Start</button>
+  <button id="tabCal" data-act="tab" data-tab="cal"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>Kalender</button>
   <button id="tabList" data-act="tab" data-tab="list"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6h.01M4 12h.01M4 18h.01" stroke-width="3"/></svg>Liste</button>
-  <button id="tabProd" data-act="tab" data-tab="prod"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>Hinzufügen</button>
-  <button id="tabAdmin" data-act="tab" data-tab="admin"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2"/></svg>Produkte</button>
+  <button id="tabProd" hidden data-act="tab" data-tab="prod"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>Neu</button>
+  <button id="tabAdmin" hidden data-act="tab" data-tab="admin"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2"/></svg>Produkte</button>
   <button id="tabFood" data-act="tab" data-tab="food"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3v8M4 3v5a3 3 0 0 0 6 0V3M7 11v10M17 3c-2 1.5-3 4-3 7v3h3zm0 10v8"/></svg>Essen</button>
+  <button id="tabTodo" data-act="tab" data-tab="todo"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg>To-do</button>
 </nav>
 <div id="toast"></div>
 <input type="file" id="fImg" accept="image/*" hidden>
@@ -393,12 +425,12 @@ const CFG=window.EINKAUF_CONFIG||{};
 const K={state:'ekl.state',dirty:'ekl.dirty',etag:'ekl.ghetag',sha:'ekl.ghsha',tok:'ekl.ghkey',last:'ekl.last'};
 const ls={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},
           set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
-const blank=()=>({v:1,items:{},prefs:{},custom:{},stores:{},order:{},dishes:{},meta:{}});
+const blank=()=>({v:1,items:{},prefs:{},custom:{},stores:{},order:{},dishes:{},meta:{},todos:{},events:{}});
 const ownLogo=s=>(S.stores&&S.stores[s]&&S.stores[s].img)||'';
 const logo=ownLogo; // Logos liegen nur in der privaten Ablage, nicht im öffentlichen Programm
 let S=Object.assign(blank(),ls.get(K.state,{}));
 let dirty=ls.get(K.dirty,false),etag=ls.get(K.etag,null),sha=ls.get(K.sha,null),tok=ls.get(K.tok,null),lastSync=ls.get(K.last,0);
-let ui={wk:0,food:'plan',tab:'home',store:'',step:'cat',cat:'',pid:'',qf:'',qa:''},changeSeq=0,syncing=false,again=false,status='local',statusMsg='',timer=0;
+let ui={cwho:'',who:'',wk:0,food:'plan',tab:'home',store:'',step:'cat',cat:'',pid:'',qf:'',qa:''},changeSeq=0,syncing=false,again=false,status='local',statusMsg='',timer=0;
 
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const norm=s=>s.toLowerCase().replace(/ß/g,'ss').normalize('NFD').replace(/[̀-ͯ]/g,'');
@@ -422,7 +454,7 @@ const onList=id=>{const i=S.items[id];return i&&!i.del&&!i.done};
 /* ---------- Zusammenführen ---------- */
 function lww(a,b){const o={...a};for(const k in b){if(!o[k]||(b[k].ts||0)>(o[k].ts||0))o[k]=b[k]}return o}
 function merge(a,b){
-  const m={v:1,items:lww(a.items||{},b.items||{}),prefs:lww(a.prefs||{},b.prefs||{}),custom:lww(a.custom||{},b.custom||{}),stores:lww(a.stores||{},b.stores||{}),order:lww(a.order||{},b.order||{}),dishes:lww(a.dishes||{},b.dishes||{}),meta:lww(a.meta||{},b.meta||{})};
+  const m={v:1,items:lww(a.items||{},b.items||{}),prefs:lww(a.prefs||{},b.prefs||{}),custom:lww(a.custom||{},b.custom||{}),stores:lww(a.stores||{},b.stores||{}),order:lww(a.order||{},b.order||{}),dishes:lww(a.dishes||{},b.dishes||{}),meta:lww(a.meta||{},b.meta||{}),todos:lww(a.todos||{},b.todos||{}),events:lww(a.events||{},b.events||{})};
   const old=Date.now()-30*864e5;
   for(const k in m.items)if(m.items[k].del&&m.items[k].ts<old)delete m.items[k];
   return m;
@@ -513,13 +545,13 @@ function renderBanner(){
   $('banner').innerHTML=h;
 }
 function render(){
-  $('vFood').hidden=ui.tab!=='food';$('tabFood').classList.toggle('on',ui.tab==='food');$('vHome').hidden=ui.tab!=='home';$('tabHome').classList.toggle('on',ui.tab==='home');$('vList').hidden=ui.tab!=='list';$('vProd').hidden=ui.tab!=='prod';$('vAdmin').hidden=ui.tab!=='admin';$('tabAdmin').classList.toggle('on',ui.tab==='admin');
-  $('tabList').classList.toggle('on',ui.tab==='list');$('tabProd').classList.toggle('on',ui.tab==='prod');
+  $('vCal').hidden=ui.tab!=='cal';$('tabCal').classList.toggle('on',ui.tab==='cal');$('vTodo').hidden=ui.tab!=='todo';$('tabTodo').classList.toggle('on',ui.tab==='todo');$('vFood').hidden=ui.tab!=='food';$('tabFood').classList.toggle('on',ui.tab==='food');$('vHome').hidden=ui.tab!=='home';$('tabHome').classList.toggle('on',ui.tab==='home');$('vList').hidden=ui.tab!=='list';$('vProd').hidden=ui.tab!=='prod';$('vAdmin').hidden=ui.tab!=='admin';$('tabAdmin').classList.toggle('on',ui.tab==='admin');
+  $('tabList').classList.toggle('on',['list','prod','admin'].includes(ui.tab));$('tabProd').classList.toggle('on',ui.tab==='prod');
   const act=Object.values(S.items).filter(i=>!i.del),open=act.filter(i=>!i.done);
   const prod=ui.tab==='prod',p=prod&&ui.step==='store'?catalog().find(x=>x.id===ui.pid):null;
   $('back').hidden=!(prod&&ui.step!=='cat');$('qfWrap').hidden=ui.step!=='cat';
-  $('title').textContent=ui.tab==='food'?'Abendessen':ui.tab==='home'?'Zettelfrei':ui.tab==='admin'?'Produkte verwalten':!prod?'Einkaufsliste':ui.step==='cat'?'Kategorie wählen':ui.step==='prod'?CAT[ui.cat].name:(p?p.name:'');
-  if(ui.tab==='food')renderFood();else if(ui.tab==='home')renderHome(act,open);else if(ui.tab==='admin')renderAdmin();else if(!prod)renderList(act,open);else renderFlow(p);
+  $('title').classList.toggle('long',ui.tab==='home');$('title').textContent=ui.tab==='cal'?'Kalender':ui.tab==='todo'?'To-do':ui.tab==='food'?'Abendessen':ui.tab==='home'?'Zentrale des Wahnsinns':ui.tab==='admin'?'Produkte verwalten':!prod?'Einkaufsliste':ui.step==='cat'?'Kategorie wählen':ui.step==='prod'?CAT[ui.cat].name:(p?p.name:'');
+  if(ui.tab==='cal')renderCal();else if(ui.tab==='todo')renderTodo();else if(ui.tab==='food')renderFood();else if(ui.tab==='home')renderHome(act,open);else if(ui.tab==='admin')renderAdmin();else if(!prod)renderList(act,open);else renderFlow(p);
 }
 function renderList(act,open){
   const fits=i=>!ui.store||!i.store||i.store===ui.store;
@@ -539,6 +571,7 @@ function renderList(act,open){
     return `<li class="${i.done?'done':''}"><button class="rowmain" data-act="toggle" data-id="${esc(i.id)}"><span class="chk">✓</span><span class="em" data-zoom="${esc(i.id)}">${pic(i.id,i.cat)}</span><span class="nm">${esc(i.name)}${i.note?`<small>${esc(i.note)}</small>`:''}</span></button>${qty}${badge(i.store)}<button class="more" data-act="edit" data-id="${esc(i.id)}" aria-label="${esc(i.name)} bearbeiten">⋯</button><button class="trash" data-act="trash" data-id="${esc(i.id)}" aria-label="${esc(i.name)} entfernen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg></button></li>`};
   const byName=(a,b)=>a.name.localeCompare(b.name,'de');
   let h='';const vis=open.filter(fits);
+  h+='<div class="addrow"><button class="btn addbig" data-act="tab" data-tab="prod"><span>＋</span>Produkt hinzufügen</button><button class="btn micbtn" data-act="voice" aria-label="Produkte einsprechen"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button></div>';
   const ws=ui.store||(used.length===1?used[0]:'');
   if(ws&&vis.length){ // nach dem Laufweg dieses Ladens sortieren
     h+=`<p class="walkhint">Sortiert nach dem Laufweg bei ${esc(ws)}</p>`;
@@ -550,7 +583,6 @@ function renderList(act,open){
     if(its.length)h+=`<h2>${cid?CAT[cid].icon+' '+esc(CAT[cid].name):'Sonstiges'}</h2><ul>${its.map(row).join('')}</ul>`;
   });
   if(!vis.length)h+=`<div class="empty"><p>${open.length?'Für '+esc(ui.store)+' steht nichts auf der Liste.':'Alles erledigt 🎉'}</p></div>`;
-  h+='<div class="addrow"><button class="btn addbig" data-act="tab" data-tab="prod"><span>＋</span>Produkt hinzufügen</button><button class="btn micbtn" data-act="voice" aria-label="Produkte einsprechen"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button></div>';
   const done=act.filter(i=>i.done).sort((a,b)=>b.ts-a.ts);
   if(done.length)h+=`<div class="headrow"><h2>Erledigt (${done.length})</h2><button class="linkbtn" data-act="clear">Erledigte entfernen</button></div><ul>${done.map(row).join('')}</ul>`;
   $('listBody').innerHTML=h;
@@ -579,11 +611,18 @@ function renderFlow(p){
 }
 
 function renderHome(act,open){
-  const n=act.length,info=n?`${open.length} offen${n-open.length?', '+(n-open.length)+' erledigt':''}`:'Keine aktuelle Liste vorhanden';
-  const hr=new Date().getHours(),hi=hr<11?'Guten Morgen':hr<18?'Hallo':'Guten Abend';
-  $('homeBody').innerHTML=`<p class="hello">${hi}! Euer Einkauf, ganz ohne Zettel.</p><button class="hcard main" data-act="hnew"><span class="pic">📝</span><span><b>Neue Einkaufsliste erstellen</b><small>Mit leerer Liste beginnen</small></span></button>
-  <button class="hcard" data-act="tab" data-tab="list" ${n?'':'disabled'}><span class="pic">🧾</span><span><b>Einkaufsliste fortsetzen</b><small>${info}</small></span></button>
-  <button class="hcard" data-act="tab" data-tab="admin"><span class="pic">🗂️</span><span><b>Produktkatalog erweitern</b><small>${catalog().length} Produkte anlegen, ändern, bebildern</small></span></button><button class="hcard" data-act="tab" data-tab="food"><span class="pic">🍽️</span><span><b>Wochenplan fürs Abendessen</b><small>${dishes().length} ${dishes().length===1?"Gericht":"Gerichte"} · per Zufall planen</small></span></button><p class="ver">Version 33</p>`;
+  const now=new Date(),hr=now.getHours(),hi=hr<11?'Guten Morgen':hr<18?'Hallo':'Guten Abend',today=isoDay(now),tmr=isoDay(new Date(Date.now()+864e5));
+  const wd=(now.getDay()||7)-1,p=planOf(0),x=p&&p[wd],d=x&&x.d&&S.dishes[x.d]&&!S.dishes[x.d].del?S.dishes[x.d]:null;
+  const ev=occurrences(today,tmr),tasks=todos().filter(t=>!t.done&&t.due&&t.due<=today).sort((a,b)=>a.due.localeCompare(b.due));
+  const li=(ic,t,sub,act)=>`<li><button class="rowmain" ${act}><span class="em">${ic}</span><span class="nm">${t}${sub?`<small>${sub}</small>`:''}</span><span class="arrow">›</span></button></li>`;
+  let h=`<p class="hello">${hi}! Heute ist ${now.toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long'})}.</p>`;
+  h+=`<h2>🍽️ Heute Abend</h2><ul>${d?li(dpic(d),esc(d.name),x.rest?'Rest vom Vortag':(d.text||d.rimg?'📖 Rezept vorhanden':''),`data-act="hfood" data-i="${wd}"`):li('🎲','Noch nichts geplant','Wochenplan würfeln','data-act="tab" data-tab="food"')}</ul>`;
+  h+=`<h2>📅 Termine heute & morgen</h2><ul>${ev.length?ev.slice(0,6).map(o=>li(o.e.time?`<span class="etime">${o.e.time}</span>`:REP[o.e.rep][1],esc(o.e.title),(o.date===today?'Heute':'Morgen')+(o.e.who?' · '+esc(o.e.who):''),`data-act="eedit" data-id="${esc(o.e.id)}"`)).join(''):li('🗓️','Keine Termine','Termin eintragen','data-act="eadd"')}</ul>`;
+  h+=`<h2>✅ Aufgaben fällig</h2><ul>${tasks.length?tasks.slice(0,5).map(t=>li(t.due<today?'⚠️':'📌',esc(t.title),(t.due<today?'überfällig':'heute')+(t.who?' · '+esc(t.who):''),`data-act="hfocus" data-tab="todo"`)).join('')+(tasks.length>5?li('…',`${tasks.length-5} weitere`,'','data-act="tab" data-tab="todo"'):''):li('🎉','Heute nichts fällig',todoInfo(),'data-act="tab" data-tab="todo"')}</ul>`;
+  const n=act.length;
+  h+=`<h2>🛒 Einkauf</h2><div class="hgrid"><button class="hcard main" data-act="hnew"><span class="pic">📝</span><span><b>Neue Liste</b></span></button><button class="hcard" data-act="tab" data-tab="list" ${n?'':'disabled'}><span class="pic">🧾</span><span><b>Liste</b><small>${n?open.length+' offen':'leer'}</small></span></button></div>
+  <button class="hcard slim" data-act="tab" data-tab="admin"><span class="pic">🗂️</span><span><b>Produktkatalog</b><small>${catalog().length} Produkte</small></span></button>`;
+  $('homeBody').innerHTML=h+'<p class="ver">Version 37</p>';
 }
 function renderAdmin(){
   const q=norm((ui.qa||'').trim()),all=catalog().filter(p=>!q||norm(p.name).includes(q));let h='<button class="btn wide" data-act="padd" style="margin:6px 0 4px">＋ Neues Produkt</button>';
@@ -751,6 +790,125 @@ function drawVoice(){
   const need=x.res.some(e=>e.need),n=x.res.filter(e=>e.on&&!e.need).length;$('vApply').disabled=!n||need;$('vApply').textContent=need?'Bitte erst oben auswählen':n?`${n} ${n===1?'Produkt':'Produkte'} auf die Liste setzen`:'Auf die Liste setzen';
 }
 
+/* ---------- To-do-Liste mit Zuweisung ---------- */
+const PCOL=['#4ade93','#f59fd0','#7cc4ff','#ffc857','#c4a1ff','#ff9b71'];
+let people=()=>{const p=S.meta&&S.meta.people&&S.meta.people.names;return p&&p.length?p:['Papa','Mama']};
+const todos=()=>Object.values(S.todos||{}).filter(t=>!t.del);
+const pcol=n=>{const i=people().indexOf(n);return i<0?'#8b9891':PCOL[i%PCOL.length]};
+const pchip=(n,all)=>n?`<span class="who" style="--c:${pcol(n)}">${esc(n)}</span>`:`<span class="who" style="--c:#8b9891">${all||'Alle'}</span>`;
+const isoDay=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const dueTxt=iso=>{if(!iso)return '';const t=isoDay(new Date()),tm=isoDay(new Date(Date.now()+864e5));if(iso===t)return 'heute';if(iso===tm)return 'morgen';const [y,m,d]=iso.split('-');return 'bis '+(+d)+'.'+(+m)+'.'+(y!==String(new Date().getFullYear())?y:'')};
+function todoInfo(){const o=todos().filter(t=>!t.done),late=o.filter(t=>t.due&&t.due<isoDay(new Date())).length;return o.length?`${o.length} offen${late?' · '+late+' überfällig':''}`:'Alles erledigt'}
+function renderTodo(){
+  const ps=people(),all=todos(),today=isoDay(new Date());
+  if(ui.who&&ui.who!=='-'&&!ps.includes(ui.who))ui.who='';
+  const fits=t=>!ui.who||(ui.who==='-'?!t.who:t.who===ui.who||!t.who);
+  const open=all.filter(t=>!t.done),cnt=f=>open.filter(f).length;
+  let h=`<div class="chips"><button class="chip ${ui.who?'':'on'}" data-act="twho" data-w="">Alle<b>${open.length}</b></button>${ps.map(p=>`<button class="chip ${ui.who===p?'on':''}" data-act="twho" data-w="${esc(p)}"><i class="dot2" style="background:${pcol(p)}"></i>${esc(p)}<b>${cnt(t=>t.who===p||!t.who)}</b></button>`).join('')}<button class="chip ${ui.who==='-'?'on':''}" data-act="twho" data-w="-">Gemeinsam<b>${cnt(t=>!t.who)}</b></button><button class="chip" data-act="tpeople" aria-label="Personen verwalten">⚙︎</button></div>
+  <button class="btn wide addbig" data-act="tadd" style="margin-top:4px"><span>＋</span>Neue Aufgabe</button>`;
+  const row=t=>`<li class="${t.done?'done':''} ${!t.done&&t.due&&t.due<today?'late':''}"><button class="rowmain" data-act="ttog" data-id="${esc(t.id)}" aria-label="${esc(t.title)} abhaken"><span class="chk">✓</span></button><button class="rowmain tmain" data-act="tedit" data-id="${esc(t.id)}"><span class="nm">${esc(t.title)}<small>${pchip(t.who)}${t.due?` <span class="due">${dueTxt(t.due)}</span>`:''}${t.rep&&t.rep!=='none'?' 🔁':''}${t.note?' · '+esc(t.note.split('\n')[0]).slice(0,60):''}</small></span></button></li>`;
+  const vis=open.filter(fits).sort((a,b)=>(a.due||'9999').localeCompare(b.due||'9999')||a.ts-b.ts);
+  const grp=[['Überfällig',t=>t.due&&t.due<today],['Heute',t=>t.due===today],['Demnächst',t=>t.due&&t.due>today],['Ohne Termin',t=>!t.due]];
+  if(!all.length)h+=`<div class="empty"><p>Noch keine Aufgaben. Leg die erste an und weise sie einer Person zu.</p></div>`;
+  else if(!vis.length)h+=`<div class="empty"><p>${ui.who?'Hier ist nichts offen.':'Alles erledigt 🎉'}</p></div>`;
+  grp.forEach(([n,f])=>{const its=vis.filter(f);if(its.length)h+=`<h2>${n} (${its.length})</h2><ul class="todo">${its.map(row).join('')}</ul>`});
+  const done=all.filter(t=>t.done&&fits(t)).sort((a,b)=>(b.doneAt||0)-(a.doneAt||0));
+  if(done.length)h+=`<div class="headrow"><h2>Erledigt (${done.length})</h2><button class="linkbtn" data-act="tclear">Erledigte entfernen</button></div><ul class="todo">${done.slice(0,30).map(row).join('')}</ul>`;
+  $('todoBody').innerHTML=h;
+}
+function todoSheet(id){
+  const t=id&&S.todos[id];
+  sheetCtx={todo:true,rep:t?t.rep||'none':'none',tid:id||null,title:t?t.title:'',who:t?t.who||'':(ui.who&&ui.who!=='-'?ui.who:''),due:t?t.due||'':'',note:t?t.note||'':''};
+  drawTodo();
+}
+const keepTodo=()=>{const x=sheetCtx;if($('fName'))x.title=$('fName').value;if($('fDue'))x.due=$('fDue').value;if($('fText'))x.note=$('fText').value};
+function drawTodo(){
+  const x=sheetCtx,t0=isoDay(new Date()),t1=isoDay(new Date(Date.now()+864e5)),wk=isoDay((()=>{const d=new Date();d.setDate(d.getDate()+((7-(d.getDay()||7))%7||7));return d})());
+  openSheet(`<h3>${x.tid?'Aufgabe bearbeiten':'Neue Aufgabe'}</h3>
+  <div class="field"><label for="fName">Was ist zu tun?</label><input id="fName" value="${esc(x.title)}" placeholder="z. B. Reifenwechsel Termin machen" autocomplete="off"></div>
+  <div class="field"><label>Wer?</label><div class="wrap">${people().map(p=>`<button class="chip ${x.who===p?'on':''}" data-act="twhoset" data-w="${esc(p)}"><i class="dot2" style="background:${pcol(p)}"></i>${esc(p)}</button>`).join('')}<button class="chip ${x.who?'':'on'}" data-act="twhoset" data-w="">Gemeinsam</button></div></div>
+  <div class="field"><label for="fDue">Bis wann?</label><div class="wrap" style="margin-bottom:8px"><button class="chip ${x.due===t0?'on':''}" data-act="tdue" data-d="${t0}">Heute</button><button class="chip ${x.due===t1?'on':''}" data-act="tdue" data-d="${t1}">Morgen</button><button class="chip ${x.due===wk?'on':''}" data-act="tdue" data-d="${wk}">Sonntag</button><button class="chip ${x.due?'':'on'}" data-act="tdue" data-d="">Kein Termin</button></div><input id="fDue" type="date" value="${esc(x.due)}"></div>
+  <div class="field"><label>Wiederholen</label><div class="wrap">${['none','weekly','monthly','yearly'].map(r=>`<button class="chip ${x.rep===r?'on':''}" data-act="trep" data-r="${r}">${r==='none'?'Nein':REP[r][0]}</button>`).join('')}</div>${x.rep!=='none'&&!x.due?'<p>Für eine Wiederholung bitte oben einen Termin wählen.</p>':''}</div>
+  <div class="field"><label for="fText">Notiz</label><textarea id="fText" class="ta" placeholder="optional">${esc(x.note)}</textarea></div>
+  <button class="btn wide" data-act="tsave">Speichern</button>
+  ${x.tid?'<button class="btn danger wide" data-act="tdel">Aufgabe löschen</button>':''}
+  <button class="btn ghost wide" data-act="close">Abbrechen</button>`,x);
+  if(!x.tid)setTimeout(()=>{const f=$('fName');if(f&&!f.value)f.focus()},60);
+}
+function peopleSheet(){
+  const ps=people();
+  openSheet(`<h3>Personen</h3><p>Aufgaben lassen sich diesen Personen zuweisen. Namen ändern und mit „Speichern“ übernehmen.</p>
+  ${ps.map((p,i)=>`<div class="field prow"><i class="dot2" style="background:${PCOL[i%PCOL.length]}"></i><input class="pname" value="${esc(p)}" autocomplete="off">${ps.length>1?`<button class="qb" data-act="pdelp" data-i="${i}" aria-label="entfernen">×</button>`:''}</div>`).join('')}
+  <button class="btn ghost wide" data-act="paddp">＋ Person hinzufügen</button>
+  <button class="btn wide" data-act="psavep">Speichern</button>
+  <button class="btn ghost wide" data-act="close">Abbrechen</button>`,{people:true});
+}
+function peopleSheetWith(v){ // Entwurf neu zeichnen, ohne schon zu speichern
+  const real=people;window.__draft=v;try{people=()=>window.__draft.length?window.__draft:['']}catch(e){}
+  peopleSheet();people=real;const ins=document.querySelectorAll('.pname');if(ins.length&&!ins[ins.length-1].value)ins[ins.length-1].focus();
+}
+function savePeople(list){
+  const old=people(),names=[];list.forEach(n=>{n=n.trim();if(n&&!names.includes(n))names.push(n)});if(!names.length)return false;
+  const t=Date.now();old.forEach((o,i)=>{const nw=list[i]&&list[i].trim();if(nw&&nw!==o&&names.includes(nw))todos().forEach(x=>{if(x.who===o){x.who=nw;x.ts=t}})}); // Umbenennung übernimmt Aufgaben
+  todos().forEach(x=>{if(x.who&&!names.includes(x.who)){x.who='';x.ts=t}});
+  setMeta('people',{names});return true;
+}
+
+/* ---------- Familienkalender ---------- */
+const REP={none:['Einmalig','📌'],weekly:['Jede Woche','🔁'],monthly:['Jeden Monat','🗓️'],yearly:['Jedes Jahr','🎂']};
+const events=()=>Object.values(S.events||{}).filter(e=>!e.del);
+const pd=iso=>{const [y,m,d]=iso.split('-').map(Number);return new Date(y,m-1,d,12)};
+function stepDate(iso,rep,k){ // k-te Wiederholung ab Startdatum; Monatsende wird abgefangen (31. -> 30./28.)
+  const d=pd(iso);if(rep==='weekly'){d.setDate(d.getDate()+7*k);return isoDay(d)}
+  const m=rep==='monthly'?k:12*k,day=d.getDate(),t=new Date(d.getFullYear(),d.getMonth()+m,1,12);
+  t.setDate(Math.min(day,new Date(t.getFullYear(),t.getMonth()+1,0).getDate()));return isoDay(t);
+}
+function occurrences(from,to,who){
+  const out=[];
+  events().forEach(e=>{
+    if(who&&e.who&&e.who!==who)return;if(who==='-'&&e.who)return;
+    if(!e.rep||e.rep==='none'){if(e.date>=from&&e.date<=to)out.push({e,date:e.date});return}
+    for(let k=0;k<2000;k++){const dt=stepDate(e.date,e.rep,k);if(dt>to)break;if(dt>=from)out.push({e,date:dt,n:k})}
+  });
+  return out.sort((a,b)=>a.date.localeCompare(b.date)||(a.e.time||'99').localeCompare(b.e.time||'99'));
+}
+function renderCal(){
+  const ps=people(),today=isoDay(new Date()),end=isoDay(new Date(Date.now()+62*864e5)),w=ui.cwho;
+  let h=`<div class="chips"><button class="chip ${w?'':'on'}" data-act="cwho" data-w="">Alle</button>${ps.map(p=>`<button class="chip ${w===p?'on':''}" data-act="cwho" data-w="${esc(p)}"><i class="dot2" style="background:${pcol(p)}"></i>${esc(p)}</button>`).join('')}<button class="chip ${w==='-'?'on':''}" data-act="cwho" data-w="-">Familie</button></div>
+  <button class="btn wide addbig" data-act="eadd" style="margin-top:4px"><span>＋</span>Neuer Termin</button>`;
+  const occ=occurrences(today,end,w);
+  if(!events().length)h+=`<div class="empty"><p>Noch keine Termine. Tragt Arzttermine, Kindergarten, Geburtstage oder Müllabfuhr ein, auf Wunsch wiederkehrend.</p></div>`;
+  else if(!occ.length)h+=`<div class="empty"><p>In den nächsten zwei Monaten steht nichts an.</p></div>`;
+  let last='';
+  occ.forEach(o=>{
+    if(o.date!==last){if(last)h+='</ul>';last=o.date;const d=pd(o.date),rel=o.date===today?'Heute':o.date===isoDay(new Date(Date.now()+864e5))?'Morgen':'';
+      h+=`<h2 class="${o.date===today?'hot':''}">${rel?rel+', ':''}${d.toLocaleDateString('de-DE',{weekday:'short',day:'numeric',month:'long'})}</h2><ul>`}
+    const age=o.e.rep==='yearly'&&o.e.birth?` · wird ${o.n}`:'';
+    h+=`<li><button class="rowmain" data-act="eedit" data-id="${esc(o.e.id)}"><span class="etime">${o.e.time||REP[o.e.rep||'none'][1]}</span><span class="nm">${esc(o.e.title)}<small>${pchip(o.e.who,'Familie')}${o.e.rep&&o.e.rep!=='none'?' '+REP[o.e.rep][0]:''}${age}${o.e.note?' · '+esc(o.e.note.split('\n')[0]).slice(0,50):''}</small></span><span class="arrow">›</span></button></li>`;
+  });
+  if(last)h+='</ul>';
+  $('calBody').innerHTML=h;
+}
+function eventSheet(id,date){
+  const e=id&&S.events[id];
+  sheetCtx={ev:true,eid:id||null,title:e?e.title:'',date:e?e.date:(date||isoDay(new Date())),time:e?e.time||'':'',who:e?e.who||'':(ui.cwho&&ui.cwho!=='-'?ui.cwho:''),rep:e?e.rep||'none':'none',birth:e?!!e.birth:false,note:e?e.note||'':''};
+  drawEvent();
+}
+const keepEv=()=>{const x=sheetCtx;if($('fName'))x.title=$('fName').value;if($('fDate'))x.date=$('fDate').value||x.date;if($('fTime'))x.time=$('fTime').value;if($('fText'))x.note=$('fText').value};
+function drawEvent(){
+  const x=sheetCtx;
+  openSheet(`<h3>${x.eid?'Termin bearbeiten':'Neuer Termin'}</h3>
+  <div class="field"><label for="fName">Was?</label><input id="fName" value="${esc(x.title)}" placeholder="z. B. Kinderarzt, Elternabend" autocomplete="off"></div>
+  <div class="field prow2"><div><label for="fDate">Datum</label><input id="fDate" type="date" value="${esc(x.date)}"></div><div><label for="fTime">Uhrzeit</label><input id="fTime" type="time" value="${esc(x.time)}"></div></div>
+  <div class="field"><label>Für wen?</label><div class="wrap">${people().map(p=>`<button class="chip ${x.who===p?'on':''}" data-act="ewho" data-w="${esc(p)}"><i class="dot2" style="background:${pcol(p)}"></i>${esc(p)}</button>`).join('')}<button class="chip ${x.who?'':'on'}" data-act="ewho" data-w="">Familie</button></div></div>
+  <div class="field"><label>Wiederholen</label><div class="wrap">${Object.keys(REP).map(r=>`<button class="chip ${x.rep===r?'on':''}" data-act="erep" data-r="${r}">${REP[r][0]}</button>`).join('')}</div>
+  ${x.rep==='yearly'?`<button class="chip ${x.birth?'on':''}" data-act="ebirth" style="margin-top:8px">🎂 Geburtstag (Alter anzeigen, Datum = Geburtstag)</button>`:''}</div>
+  <div class="field"><label for="fText">Notiz</label><textarea id="fText" class="ta" placeholder="optional, z. B. Adresse oder Mitbringen">${esc(x.note)}</textarea></div>
+  <button class="btn wide" data-act="esave">Speichern</button>
+  ${x.eid?`<button class="btn danger wide" data-act="edel">${x.rep!=='none'?'Termin (alle Wiederholungen) löschen':'Termin löschen'}</button>`:''}
+  <button class="btn ghost wide" data-act="close">Abbrechen</button>`,x);
+}
+
 /* ---------- Essen & Wochenplan (Abendessen) ---------- */
 const DAYS=['Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag'];
 const DTYPE={meat:['Fleisch','🥩'],fish:['Fisch','🐟'],veg:['Ohne Fleisch & Fisch','🥦']};
@@ -891,6 +1049,49 @@ const A={
   cat(d){ui.cat=d.c;go('prod')},
   back(){goBack()},
   fseg(d){ui.food=d.v;render()},
+  twho(d){ui.who=d.w;render()},
+  cwho(d){ui.cwho=d.w;render()},
+  eadd(){eventSheet(null)},
+  eedit(d){eventSheet(d.id)},
+  ewho(d){keepEv();sheetCtx.who=d.w;drawEvent()},
+  erep(d){keepEv();sheetCtx.rep=d.r;if(d.r!=='yearly')sheetCtx.birth=false;drawEvent()},
+  ebirth(){keepEv();sheetCtx.birth=!sheetCtx.birth;drawEvent()},
+  esave(){
+    keepEv();const x=sheetCtx,n=x.title.trim();if(!n){$('fName').focus();return}if(!x.date){$('fDate').focus();return}
+    const id=x.eid||'e:'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);if(!S.events)S.events={};
+    S.events[id]={id,title:n,date:x.date,time:x.time,who:x.who,rep:x.rep,birth:x.rep==='yearly'&&x.birth,note:x.note.trim(),del:false,ts:Date.now()};
+    closeSheet();touch();toast(x.eid?'Termin gespeichert':'Termin eingetragen');
+  },
+  edel(){const x=sheetCtx;S.events[x.eid]={...S.events[x.eid],del:true,ts:Date.now()};closeSheet();touch();toast('Termin gelöscht')},
+  hfood(d){ui.tab='food';ui.food='plan';ui.wk=0;render();daySheet(+d.i)},
+  hfocus(d){A.tab({tab:d.tab})},
+  tadd(){todoSheet(null)},
+  tedit(d){todoSheet(d.id)},
+  ttog(d){
+    const t=S.todos[d.id];if(!t)return;t.done=!t.done;t.doneAt=t.done?Date.now():0;t.ts=Date.now();
+    if(t.done&&t.rep&&t.rep!=='none'&&t.due&&!t.nextId){ // wiederkehrend: nächste Fälligkeit gleich neu anlegen
+      let nx=stepDate(t.due,t.rep,1);const today=isoDay(new Date());for(let k=2;nx<today&&k<500;k++)nx=stepDate(t.due,t.rep,k);
+      const id='t:'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);t.nextId=id;
+      S.todos[id]={id,title:t.title,who:t.who,due:nx,rep:t.rep,note:t.note,done:false,doneAt:0,del:false,ts:Date.now()};
+      touch();toast('Erledigt · nächstes Mal '+dueTxt(nx).replace('bis ',''));return;
+    }
+    touch();if(t.done)toast('Erledigt: '+t.title);
+  },
+  trep(d){keepTodo();sheetCtx.rep=d.r;drawTodo()},
+  tclear(){const n=Date.now();todos().forEach(t=>{if(t.done&&(!ui.who||(ui.who==='-'?!t.who:t.who===ui.who||!t.who))){t.del=true;t.ts=n}});touch()},
+  twhoset(d){keepTodo();sheetCtx.who=d.w;drawTodo()},
+  tdue(d){keepTodo();sheetCtx.due=d.d;drawTodo()},
+  tsave(){
+    keepTodo();const x=sheetCtx,n=x.title.trim();if(!n){$('fName').focus();return}
+    const id=x.tid||'t:'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),old=S.todos[id]||{};if(!S.todos)S.todos={};
+    S.todos[id]={id,title:n,who:x.who,due:x.due,rep:x.due?x.rep:'none',note:x.note.trim(),done:!!old.done,doneAt:old.doneAt||0,del:false,ts:Date.now()};
+    closeSheet();touch();toast(x.tid?'Gespeichert':'Aufgabe angelegt'+(x.who?' für '+x.who:''));
+  },
+  tdel(){const x=sheetCtx;S.todos[x.tid]={...S.todos[x.tid],del:true,ts:Date.now()};closeSheet();touch();toast('Aufgabe gelöscht')},
+  tpeople(){peopleSheet()},
+  paddp(){const v=[...document.querySelectorAll('.pname')].map(e=>e.value);peopleSheetWith(v.concat(['']))},
+  pdelp(d){const v=[...document.querySelectorAll('.pname')].map(e=>e.value);v.splice(+d.i,1);peopleSheetWith(v)},
+  psavep(){if(savePeople([...document.querySelectorAll('.pname')].map(e=>e.value))){closeSheet();toast('Personen gespeichert')}else toast('Mindestens eine Person eintragen')},
   wk(d){ui.wk=+d.d?ui.wk+(+d.d):0;render()},
   fadd(){dishSheet(null)},
   fedit(d){dishSheet(d.id)},
