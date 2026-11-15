@@ -322,6 +322,15 @@ nav button[hidden]{display:none}
 header h1.long{font-size:23px}
 #homeBody .em{width:auto;min-width:30px}
 #homeBody .etime{min-width:0}
+.nm .info{display:block;font-size:12px;line-height:1.35;color:#ffb454;font-weight:600;margin-top:2px}
+.brand{font-weight:800;color:#ffb454}
+.offer{font-weight:800;white-space:nowrap;font-size:11px;padding:1px 6px;border-radius:6px}
+.offer.now{background:#ffd166;color:#1a1300}
+.offer.soon{background:#9fd3ff;color:#06121c}
+.offer.over{background:#8b989133;color:var(--muted)}
+.done .nm .info{color:var(--muted)}
+.done .brand{color:var(--muted)}
+.nolab label{font-weight:500}
 .hgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .hgrid .hcard{min-height:96px;padding:16px;gap:12px}
 .hgrid .hcard.main{min-height:96px}
@@ -568,7 +577,7 @@ function renderList(act,open){
   if(!act.length){$('listBody').innerHTML=`<div class="empty"><p>Die Liste ist leer.</p><button class="btn" data-act="tab" data-tab="prod">Produkte auswählen</button> <button class="btn ghost" data-act="voice">🎤 Einsprechen</button></div>`;return}
   const row=i=>{const q=qparse(i.qty);
     const qty=i.done?`<span class="qv">${esc(qshow(i.qty))}</span>`:`<span class="qgrp"><button class="qb" data-act="qplus" data-id="${esc(i.id)}" aria-label="Menge erhöhen">+</button><span class="qv">${esc(qshow(i.qty))}</span><button class="qb" data-act="qminus" data-id="${esc(i.id)}" aria-label="Menge verringern" ${q.n<=q.step?'disabled':''}>−</button></span>`;
-    return `<li class="${i.done?'done':''}"><button class="rowmain" data-act="toggle" data-id="${esc(i.id)}"><span class="chk">✓</span><span class="em" data-zoom="${esc(i.id)}">${pic(i.id,i.cat)}</span><span class="nm">${esc(i.name)}${i.note?`<small>${esc(i.note)}</small>`:''}</span></button>${qty}${badge(i.store)}<button class="more" data-act="edit" data-id="${esc(i.id)}" aria-label="${esc(i.name)} bearbeiten">⋯</button><button class="trash" data-act="trash" data-id="${esc(i.id)}" aria-label="${esc(i.name)} entfernen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg></button></li>`};
+    return `<li class="${i.done?'done':''}"><button class="rowmain" data-act="toggle" data-id="${esc(i.id)}"><span class="chk">✓</span><span class="em" data-zoom="${esc(i.id)}">${pic(i.id,i.cat)}</span><span class="nm">${esc(i.name)}${infoLine(i)}</span></button>${qty}${badge(i.store)}<button class="more" data-act="edit" data-id="${esc(i.id)}" aria-label="${esc(i.name)} bearbeiten">⋯</button><button class="trash" data-act="trash" data-id="${esc(i.id)}" aria-label="${esc(i.name)} entfernen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg></button></li>`};
   const byName=(a,b)=>a.name.localeCompare(b.name,'de');
   let h='';const vis=open.filter(fits);
   h+='<div class="addrow"><button class="btn addbig" data-act="tab" data-tab="prod"><span>＋</span>Produkt hinzufügen</button><button class="btn micbtn" data-act="voice" aria-label="Produkte einsprechen"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button></div>';
@@ -622,7 +631,7 @@ function renderHome(act,open){
   const n=act.length;
   h+=`<h2>🛒 Einkauf</h2><div class="hgrid"><button class="hcard main" data-act="hnew"><span class="pic">📝</span><span><b>Neue Liste</b></span></button><button class="hcard" data-act="tab" data-tab="list" ${n?'':'disabled'}><span class="pic">🧾</span><span><b>Liste</b><small>${n?open.length+' offen':'leer'}</small></span></button></div>
   <button class="hcard slim" data-act="tab" data-tab="admin"><span class="pic">🗂️</span><span><b>Produktkatalog</b><small>${catalog().length} Produkte</small></span></button>`;
-  $('homeBody').innerHTML=h+'<p class="ver">Version 38</p>';
+  $('homeBody').innerHTML=h+'<p class="ver">Version 40</p>';
 }
 function renderAdmin(){
   const q=norm((ui.qa||'').trim()),all=catalog().filter(p=>!q||norm(p.name).includes(q));let h='<button class="btn wide" data-act="padd" style="margin:6px 0 4px">＋ Neues Produkt</button>';
@@ -644,12 +653,25 @@ function openSheet(html,ctx){ // neuer Dialog beginnt oben; wird derselbe Dialog
 }
 function closeSheet(){if(rec){try{rec.abort()}catch(e){}rec=null}$('sheet').hidden=true;sheetCtx=null}
 const storeChips=(cur,act)=>`<div class="wrap">${[''].concat(STORES).map(s=>`<button class="chip ${cur===s?'on':''}" data-act="${act}" data-s="${s}">${s||'Egal'}</button>`).join('')}</div>`;
+// Zusatzinfos hängen nur am Eintrag dieser Einkaufsliste (Marke, Notiz, Angebotszeitraum)
+const dm=iso=>{const [y,m,d]=iso.split('-');return (+d)+'.'+(+m)+'.'};
+function offerState(i){if(!i.offFrom&&!i.offTo)return '';const t=isoDay(new Date());if(i.offTo&&t>i.offTo)return 'over';if(i.offFrom&&t<i.offFrom)return 'soon';return 'now'}
+function offerTxt(i){const a=i.offFrom,b=i.offTo;return a&&b?(a===b?dm(a):dm(a)+'–'+dm(b)):a?'ab '+dm(a):'bis '+dm(b)}
+function infoLine(i){ // eine kleine Zeile unter dem Produktnamen
+  const parts=[];if(i.brand)parts.push(`<span class="brand">${esc(i.brand)}</span>`);
+  const st=offerState(i);if(st)parts.push(`<span class="offer ${st}">${st==='over'?'Angebot vorbei':'Angebot '+offerTxt(i)}</span>`);
+  if(i.note)parts.push(esc(i.note));
+  return parts.length?`<small class="info">${parts.join(' · ')}</small>`:'';
+}
 function editSheet(id){
   const i=S.items[id];if(!i)return;
   const custom=S.custom[id]&&!S.custom[id].del;
   openSheet(`<h3>${esc(i.name)}</h3>
   <div class="field"><label for="fQty">Menge</label><input id="fQty" value="${esc(i.qty||'')}" placeholder="z. B. 2 oder 500 g" autocomplete="off"></div>
-  <div class="field"><label for="fNote">Notiz</label><input id="fNote" value="${esc(i.note||'')}" placeholder="z. B. Marke oder Sorte" autocomplete="off"></div>
+  <div class="field"><label for="fBrand">Marke</label><input id="fBrand" value="${esc(i.brand||'')}" placeholder="z. B. Milka, Barilla" autocomplete="off"></div>
+  <div class="field"><label>Im Angebot</label><div class="prow2 nolab"><div><label for="fOffFrom">von</label><input id="fOffFrom" type="date" value="${esc(i.offFrom||'')}"></div><div><label for="fOffTo">bis</label><input id="fOffTo" type="date" value="${esc(i.offTo||'')}"></div></div>${i.offFrom||i.offTo?'<button class="linkbtn" data-act="offclear">Angebot entfernen</button>':''}</div>
+  <div class="field"><label for="fNote">Notiz</label><input id="fNote" value="${esc(i.note||'')}" placeholder="z. B. Sorte, Größe, nur wenn reif" autocomplete="off"></div>
+  <p>Diese Angaben gelten nur für diesen Einkauf und verschwinden, wenn das Produkt von der Liste genommen wird.</p>
   <div class="field"><label>Laden</label>${storeChips(i.store||'','setstore')}</div>
   <button class="btn wide" data-act="save">Fertig</button>
   <button class="btn danger wide" data-act="remove">Von der Liste entfernen</button>
@@ -708,8 +730,9 @@ function settingsSheet(){
 }
 function commitFields(){
   const x=sheetCtx;if(!x||!x.id||!S.items[x.id]||!$('fQty'))return;
-  const i=S.items[x.id],q=$('fQty').value.trim(),n=$('fNote').value.trim();
-  if(q!==(i.qty||'')||n!==(i.note||'')){i.qty=q;i.note=n;i.ts=Date.now();touch()}
+  const i=S.items[x.id],v={qty:$('fQty').value.trim(),note:$('fNote').value.trim(),brand:$('fBrand').value.trim(),offFrom:$('fOffFrom').value,offTo:$('fOffTo').value};
+  if(v.offFrom&&v.offTo&&v.offTo<v.offFrom)[v.offFrom,v.offTo]=[v.offTo,v.offFrom];
+  if(Object.keys(v).some(k=>v[k]!==(i[k]||''))){Object.assign(i,v);i.ts=Date.now();touch()}
 }
 
 /* ---------- Spracheingabe ---------- */
@@ -1159,6 +1182,7 @@ const A={
   newq(){prodSheet(null,CATS[0][0],true,ui.qf.trim())},
   toggle(d){const i=S.items[d.id];if(i){i.done=!i.done;i.ts=Date.now();touch()}},
   edit(d){editSheet(d.id)},
+  offclear(){commitFields();const i=S.items[sheetCtx.id];i.offFrom=i.offTo='';i.ts=Date.now();touch();editSheet(i.id)},
   qplus(d){qstep(d.id,1)},
   qminus(d){qstep(d.id,-1)},
   trash(d){const i=S.items[d.id];if(i){i.del=true;i.ts=Date.now();touch();toast(i.name+' entfernt')}},
